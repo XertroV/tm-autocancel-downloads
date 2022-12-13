@@ -12,6 +12,6 @@ Authors: XertroV
 
 Suggestions/feedback: @XertroV on Openplanet discord
 
-Code/issues: [https://github.com/XertroV/tm-list-players-pbs](https://github.com/XertroV/tm-list-players-pbs)
+Code/issues: [https://github.com/XertroV/tm-autocancel-downloads](https://github.com/XertroV/tm-autocancel-downloads)
 
 GL HF
