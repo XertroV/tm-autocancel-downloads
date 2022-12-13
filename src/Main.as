@@ -30,7 +30,7 @@ void MainCoro() {
             if (!isCarSkin) continue;
         }
         string filename = StripFormatCodes(string(bd.WaitMessage_LabelText)).SubStr(20);
-        warn("Cancelling download: " + bd.WaitMessage_LabelText);
+        // warn("Cancelling download: " + bd.WaitMessage_LabelText);
         warn("Cancelling download: " + filename);
         bd.WaitMessage_Ok();
         sleep(50);
