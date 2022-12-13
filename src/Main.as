@@ -10,6 +10,10 @@ void MainCoro() {
     auto app = cast<CGameManiaPlanet>(GetApp());
     while (true) {
         yield();
+        if (!S_Enabled) {
+            sleep(100);
+            continue;
+        }
         auto bd = app.BasicDialogs;
         if (lastDialog != bd.Dialog) {
             // warn("New dialog type: " + tostring(bd.Dialog));
@@ -20,7 +24,7 @@ void MainCoro() {
             // print("not cancel: " + bd.WaitMessage_ButtonText);
             continue;
         }
-        sleep(100);
+        sleep(50);
         if (S_OnlyCancelCarSkins) {
             bool isCarSkin = bd.WaitMessage_LabelText.Contains("Skins\\Models\\CarSport\\");
             if (!isCarSkin) continue;
@@ -29,7 +33,7 @@ void MainCoro() {
         warn("Cancelling download: " + bd.WaitMessage_LabelText);
         warn("Cancelling download: " + filename);
         bd.WaitMessage_Ok();
-        sleep(100);
+        sleep(50);
         bd.AskYesNo_Yes();
         Notify("Auto-cancelled download: " + filename);
     }
