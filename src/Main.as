@@ -25,8 +25,9 @@ void MainCoro() {
             bool isCarSkin = bd.WaitMessage_LabelText.Contains("Skins\\Models\\CarSport\\");
             if (!isCarSkin) continue;
         }
-        string filename = bd.WaitMessage_LabelText.SubStr(20);
+        string filename = StripFormatCodes(string(bd.WaitMessage_LabelText)).SubStr(20);
         warn("Cancelling download: " + bd.WaitMessage_LabelText);
+        warn("Cancelling download: " + filename);
         bd.WaitMessage_Ok();
         sleep(100);
         bd.AskYesNo_Yes();
