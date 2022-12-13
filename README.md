@@ -4,7 +4,7 @@ This plugin detects downloads and automatically presses 'cancel' then 'ok' for y
 
 By default it will only do this for car skins, which allows mods to load.
 
-If you uncheck 'Only auto-cancel car skin downloads?' then all downloads will be auto-cancelled.
+If you uncheck 'Only auto-cancel car skin downloads?' in settings then all downloads will be auto-cancelled.
 
 License: Public Domain
 
