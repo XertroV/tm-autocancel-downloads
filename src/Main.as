@@ -39,6 +39,14 @@ void MainCoro() {
     }
 }
 
+/** Render function called every frame intended only for menu items in `UI`.
+*/
+void RenderMenu() {
+    if (UI::MenuItem(Icons::Ban + " " + Meta::ExecutingPlugin().Name, "", S_Enabled)) {
+        S_Enabled = !S_Enabled;
+    }
+}
+
 void Notify(const string &in msg) {
     UI::ShowNotification(Meta::ExecutingPlugin().Name, msg);
     trace("Notified: " + msg);
