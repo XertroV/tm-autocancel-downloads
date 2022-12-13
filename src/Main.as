@@ -1,0 +1,40 @@
+void Main() {
+    startnew(MainCoro);
+}
+
+CGameDialogs::EDialog lastDialog = CGameDialogs::EDialog::None;
+
+// note, this uses `app.BasicDialogs, and app.Operation_InProgress isn't true when the dialogs are showing.
+
+void MainCoro() {
+    auto app = cast<CGameManiaPlanet>(GetApp());
+    while (true) {
+        yield();
+        auto bd = app.BasicDialogs;
+        if (lastDialog != bd.Dialog) {
+            // warn("New dialog type: " + tostring(bd.Dialog));
+            lastDialog = bd.Dialog;
+        }
+        if (bd.Dialog != CGameDialogs::EDialog::WaitMessage) continue;
+        if (string(bd.WaitMessage_ButtonText) != "Cancel") {
+            // print("not cancel: " + bd.WaitMessage_ButtonText);
+            continue;
+        }
+        sleep(100);
+        if (S_OnlyCancelCarSkins) {
+            bool isCarSkin = bd.WaitMessage_LabelText.Contains("Skins\\Models\\CarSport\\");
+            if (!isCarSkin) continue;
+        }
+        string filename = bd.WaitMessage_LabelText.SubStr(20);
+        warn("Cancelling download: " + bd.WaitMessage_LabelText);
+        bd.WaitMessage_Ok();
+        sleep(100);
+        bd.AskYesNo_Yes();
+        Notify("Auto-cancelled download: " + filename);
+    }
+}
+
+void Notify(const string &in msg) {
+    UI::ShowNotification(Meta::ExecutingPlugin().Name, msg);
+    trace("Notified: " + msg);
+}
