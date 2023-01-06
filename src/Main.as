@@ -24,12 +24,18 @@ void MainCoro() {
             // print("not cancel: " + bd.WaitMessage_ButtonText);
             continue;
         }
+        string label = string(bd.WaitMessage_LabelText);
+        bool isUpdating = label.StartsWith("Updating data...");
+        bool isDownloading = label.StartsWith("Downloading ");
+        if (!(isDownloading || isUpdating)) {
+            continue;
+        }
         sleep(50);
         if (S_OnlyCancelCarSkins) {
-            bool isCarSkin = bd.WaitMessage_LabelText.Contains("Skins\\Models\\CarSport\\");
+            bool isCarSkin = label.Contains("Skins\\Models\\CarSport\\");
             if (!isCarSkin) continue;
         }
-        string filename = StripFormatCodes(string(bd.WaitMessage_LabelText)).SubStr(20);
+        string filename = isUpdating ? "Updating data..." : StripFormatCodes(label).SubStr(20);
         // warn("Cancelling download: " + bd.WaitMessage_LabelText);
         warn("Cancelling download: " + filename);
         bd.WaitMessage_Ok();
