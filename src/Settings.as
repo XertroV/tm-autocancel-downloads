@@ -9,3 +9,6 @@ bool S_CancelAnyDownload = false;
 
 [Setting category="General" name="Auto-cancel editor 'Updating...' promps?" description="If this is not updated, the plugin won't cancel this prompts."]
 bool S_CancelEditorUpdating = false;
+
+[Setting category="General" name="Show a notification"]
+bool S_ShowNotification = true;
