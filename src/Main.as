@@ -27,14 +27,16 @@ void MainCoro() {
         string label = string(bd.WaitMessage_LabelText);
         bool isUpdating = label.StartsWith("Updating data...");
         bool isDownloading = label.StartsWith("Downloading ");
+        bool isCarSkin = label.Contains("Skins\\Models\\CarSport\\");
         if (!(isDownloading || isUpdating)) {
             continue;
         }
-        sleep(50);
-        if (S_OnlyCancelCarSkins) {
-            bool isCarSkin = label.Contains("Skins\\Models\\CarSport\\");
-            if (!isCarSkin) continue;
-        }
+        bool cancelCarSkin = isCarSkin && S_CancelCarSkins;
+        bool cancelUpdating = isUpdating && S_CancelEditorUpdating;
+        bool cancelAny = isDownloading && S_CancelAnyDownload;
+        bool shouldCancel = (cancelCarSkin || cancelUpdating || cancelAny);
+        if (!shouldCancel) continue;
+        yield();
         string filename = isUpdating ? "Updating data..." : StripFormatCodes(label).SubStr(20);
         // warn("Cancelling download: " + bd.WaitMessage_LabelText);
         warn("Cancelling download: " + filename);
