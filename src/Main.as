@@ -41,7 +41,8 @@ void MainCoro() {
         // warn("Cancelling download: " + bd.WaitMessage_LabelText);
         warn("Cancelling download: " + filename);
         bd.WaitMessage_Ok();
-        sleep(50);
+        yield();
+        yield();
         bd.AskYesNo_Yes();
         if (S_ShowNotification) Notify("Auto-cancelled download: " + filename);
     }
