@@ -4,7 +4,11 @@ void Main() {
 
 CGameDialogs::EDialog lastDialog = CGameDialogs::EDialog::None;
 
+uint lastDownloading;
+uint lastUpdating;
+
 // note, this uses `app.BasicDialogs, and app.Operation_InProgress isn't true when the dialogs are showing.
+// exception: when acknowledging failed downloads. For that, we check that lastDownloading was recent.
 
 void MainCoro() {
     auto app = cast<CGameManiaPlanet>(GetApp());
@@ -21,8 +25,10 @@ void MainCoro() {
         }
 
         bool mbHasNonBasicDialog = bd.Dialogs.CurrentFrame !is null;
+        bool isWaitMessage = bd.Dialog == CGameDialogs::EDialog::WaitMessage;
 
-        if (bd.Dialog != CGameDialogs::EDialog::WaitMessage && !mbHasNonBasicDialog) continue;
+        if (!isWaitMessage && !mbHasNonBasicDialog) continue;
+
         if (string(bd.WaitMessage_ButtonText) != "Cancel") {
             // print("not cancel: " + bd.WaitMessage_ButtonText);
             continue;
@@ -30,6 +36,12 @@ void MainCoro() {
         string label = string(bd.WaitMessage_LabelText);
         bool isUpdating = label.StartsWith("Updating data...");
         bool isDownloading = label.StartsWith("Downloading ");
+
+        if (isWaitMessage) {
+            if (isDownloading) lastDownloading = Time::Now;
+            if (isUpdating) lastUpdating = Time::Now;
+        }
+
         bool isCarSkin = label.Contains("Skins\\Models\\CarSport\\");
         if (!(isDownloading || isUpdating)) {
             continue;
@@ -44,8 +56,10 @@ void MainCoro() {
             }
         }
 
+        // note: we need to check isWaitMessage when in the editor to avoid mb cancelling item saving or things
+
         bool cancelCarSkin = isCarSkin && S_CancelCarSkins;
-        bool cancelUpdating = isUpdating && S_CancelEditorUpdating;
+        bool cancelUpdating = isUpdating && S_CancelEditorUpdating && isWaitMessage;
         bool cancelAny = isDownloading && S_CancelAnyDownload;
         bool shouldCancel = (cancelCarSkin || cancelUpdating || cancelAny || downloadHasFailed);
         if (!shouldCancel) continue;
@@ -62,6 +76,7 @@ void MainCoro() {
 }
 
 bool CheckForUnableToDL(CGameDialogs@ bd) {
+    if (Time::Now - lastDownloading > 2000) return false;
     if (bd.Dialogs is null) return false;
     auto cf = bd.Dialogs.CurrentFrame;
     if (cf is null) return false;
@@ -74,6 +89,10 @@ bool CheckForUnableToDL(CGameDialogs@ bd) {
         auto btnOuter = cast<CGameControlCardGeneric>(gc.Childs[0]); // ButtonOk
         auto btn = cast<CControlButton>(btnOuter.Childs[0]); // ButtonSelection
         auto label = cast<CControlLabel>(gc.Childs[1]); // LabelMessage
+
+        if (!c1.IsVisible || !c2.IsVisible || !gc.IsVisible || !btnOuter.IsVisible || !btn.IsVisible || !label.IsVisible) {
+            return false;
+        }
 
         if (label.Label.StartsWith("Unable to download data:")) {
             btn.OnAction();
