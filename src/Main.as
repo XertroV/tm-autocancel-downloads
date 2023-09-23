@@ -6,6 +6,7 @@ CGameDialogs::EDialog lastDialog = CGameDialogs::EDialog::None;
 
 uint lastDownloading;
 uint lastUpdating;
+bool canceledUnableToDownload = false;
 
 // note, this uses `app.BasicDialogs, and app.Operation_InProgress isn't true when the dialogs are showing.
 // exception: when acknowledging failed downloads. For that, we check that lastDownloading was recent.
@@ -18,6 +19,11 @@ void MainCoro() {
             sleep(100);
             continue;
         }
+
+        // nothing to cancel if current playground is non-null
+        if (app.CurrentPlayground !is null) continue;
+        if (app.Editor !is null) continue;
+
         auto bd = app.BasicDialogs;
         if (lastDialog != bd.Dialog) {
             // warn("New dialog type: " + tostring(bd.Dialog));
@@ -27,12 +33,20 @@ void MainCoro() {
         bool mbHasNonBasicDialog = bd.Dialogs.CurrentFrame !is null;
         bool isWaitMessage = bd.Dialog == CGameDialogs::EDialog::WaitMessage;
 
-        if (!isWaitMessage && !mbHasNonBasicDialog) continue;
+        // check non-basic dialogs separately
+        if (!isWaitMessage && mbHasNonBasicDialog) {
+            CheckNonBasic(app);
+            continue;
+        }
+
+        // otherwise, if a wait msg is not showing, there's nothing to cancel
+        if (!isWaitMessage) continue;
 
         if (string(bd.WaitMessage_ButtonText) != "Cancel") {
             // print("not cancel: " + bd.WaitMessage_ButtonText);
             continue;
         }
+
         string label = string(bd.WaitMessage_LabelText);
         bool isUpdating = label.StartsWith("Updating data...");
         bool isDownloading = label.StartsWith("Downloading ");
@@ -47,14 +61,8 @@ void MainCoro() {
             continue;
         }
 
-        bool downloadHasFailed = false;
-        // check to see if we can acknowledge an update to download prompt
-        // bd.Dialog = None here :/
-        if (isDownloading && S_AckFailedDownload) {
-            if (CheckForUnableToDL(bd)) {
-                downloadHasFailed = S_CancelAfterFailedDownload;
-            }
-        }
+        bool downloadHasFailed = canceledUnableToDownload && S_CancelAfterFailedDownload;
+        canceledUnableToDownload = false;
 
         // note: we need to check isWaitMessage when in the editor to avoid mb cancelling item saving or things
 
@@ -63,16 +71,21 @@ void MainCoro() {
         bool cancelAny = isDownloading && S_CancelAnyDownload;
         bool shouldCancel = (cancelCarSkin || cancelUpdating || cancelAny || downloadHasFailed);
         if (!shouldCancel) continue;
-        yield();
+        // yield();
         string filename = isUpdating ? "Updating data..." : StripFormatCodes(label).SubStr(20);
         // warn("Cancelling download: " + bd.WaitMessage_LabelText);
         warn("Cancelling download: " + filename);
         bd.WaitMessage_Ok();
+        // need 2 yeilds for whatever reason
         yield();
         yield();
         bd.AskYesNo_Yes();
         if (S_ShowNotification) Notify("Auto-cancelled download: " + filename);
     }
+}
+
+void CheckNonBasic(CGameCtnApp@ app) {
+    canceledUnableToDownload = S_AckFailedDownload && CheckForUnableToDL(app.BasicDialogs);
 }
 
 bool CheckForUnableToDL(CGameDialogs@ bd) {
@@ -86,9 +99,9 @@ bool CheckForUnableToDL(CGameDialogs@ bd) {
         auto c2 = cast<CControlContainer>(c1.Childs[0]); // FrameTop
         auto gc = cast<CControlContainer>(c2.Childs[2]); // GridContent
 
+        auto label = cast<CControlLabel>(gc.Childs[1]); // LabelMessage
         auto btnOuter = cast<CGameControlCardGeneric>(gc.Childs[0]); // ButtonOk
         auto btn = cast<CControlButton>(btnOuter.Childs[0]); // ButtonSelection
-        auto label = cast<CControlLabel>(gc.Childs[1]); // LabelMessage
 
         if (!c1.IsVisible || !c2.IsVisible || !gc.IsVisible || !btnOuter.IsVisible || !btn.IsVisible || !label.IsVisible) {
             return false;
